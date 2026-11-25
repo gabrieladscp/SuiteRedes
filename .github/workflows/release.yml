@@ -1,0 +1,35 @@
+# Build + assinatura gratuita via SignPath Foundation (projetos de código aberto).
+# Configure no GitHub: secret SIGNPATH_API_TOKEN e variables SIGNPATH_ORG_ID, SIGNPATH_PROJECT_SLUG.
+name: release
+on:
+  push:
+    tags: ['v*']
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions: { contents: write, id-token: write }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compilar
+        run: dotnet build SuiteRedes.csproj -c Release
+      - name: Instalador (Inno Setup)
+        run: |
+          choco install innosetup -y --no-progress
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Q installer\SuiteRedes.iss
+      - uses: actions/upload-artifact@v4
+        id: unsigned
+        with: { name: unsigned, path: publish/instalador/SuiteRedes-Setup.exe }
+      - uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORG_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+      - name: Hash e release
+        run: |
+          Get-FileHash signed\SuiteRedes-Setup.exe -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  SuiteRedes-Setup.exe" } | Out-File signed\SHA256.txt
+          gh release create ${{ github.ref_name }} signed\SuiteRedes-Setup.exe signed\SHA256.txt --generate-notes
+        env: { GH_TOKEN: '${{ github.token }}' }

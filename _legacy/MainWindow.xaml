@@ -1,0 +1,260 @@
+<Window x:Class="SuiteRedes.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SuiteRedes"
+        Title="Suíte de Redes" Icon="pack://application:,,,/app.ico" Width="1400" Height="900" MinWidth="900" MinHeight="600"
+        Background="{StaticResource BgApp}" Foreground="{StaticResource T1}" FontFamily="Segoe UI" FontSize="14"
+        WindowStartupLocation="CenterScreen" WindowState="Maximized" SizeChanged="Window_SizeChanged"
+        TextOptions.TextFormattingMode="Display" UseLayoutRounding="True">
+  <Window.Resources>
+    <DataTemplate x:Key="InfoTile">
+      <Border Margin="0,4,10,4" Padding="12,9" CornerRadius="4" Background="{StaticResource BgCard2}" BorderBrush="{StaticResource Line}" BorderThickness="1">
+        <StackPanel>
+          <TextBlock Text="{Binding Label}" FontSize="11.5" FontWeight="SemiBold" Foreground="{StaticResource T3}"/>
+          <TextBlock Text="{Binding Value}" TextWrapping="Wrap" FontWeight="Bold" FontSize="14.5" Foreground="#E6EEF2"/>
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+  </Window.Resources>
+
+  <Grid>
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <Border Background="#0A1012" BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="26,10">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+          <Button x:Name="BtnFull" Content="Verificar minha internet" Style="{StaticResource Big}" Click="BtnFull_Click" Margin="0" Padding="18,8" ToolTip="Atalho: F5"/>
+          <Button x:Name="BtnFullStop" Content="Cancelar" Style="{StaticResource Danger}" Click="BtnFullStop_Click" IsEnabled="False" Padding="14,8" Margin="8,0,0,0" ToolTip="Atalho: Esc"/>
+          <ToggleButton x:Name="BtnCfg" Content="Configurações" Style="{StaticResource TogBtn}" Margin="8,0,0,0" Padding="14,8" ToolTip="Destinos testados"/>
+          <Button x:Name="BtnExport" Content="Exportar relatório" Style="{StaticResource Secondary}" Click="BtnExport_Click" IsEnabled="False" Margin="8,0,0,0" ToolTip="Salva o relatório (HTML, TXT ou amostras CSV)"/>
+        </StackPanel>
+        <TextBlock Text="Suíte de Redes" FontSize="18" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+      </DockPanel>
+    </Border>
+    <Popup x:Name="PopCfg" PlacementTarget="{Binding ElementName=BtnCfg}" Placement="Bottom" HorizontalOffset="-300" StaysOpen="False" AllowsTransparency="True"
+           IsOpen="{Binding IsChecked, ElementName=BtnCfg, Mode=TwoWay}" Closed="PopCfg_Closed">
+      <Border Background="#141C20" BorderBrush="#2C3B40" BorderThickness="1" CornerRadius="8" Padding="18" Width="480" Margin="0,6,0,0">
+        <StackPanel>
+          <TextBlock Text="Destinos testados" FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource T1}"/>
+          <TextBlock Style="{StaticResource Help}" TextWrapping="Wrap" Text="Um destino por linha (IP ou domínio), até 16. Opcional: rótulo após “=”, ex.: rds.skytins.com.br = Empresa. Salvo ao fechar."/>
+          <StackPanel x:Name="PnlDests" Margin="0,6,0,0">
+            <TextBox x:Name="TxtDests" AcceptsReturn="True" TextWrapping="NoWrap" Height="300" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12.5" Margin="0,2,0,8"/>
+          </StackPanel>
+          <Button Content="Restaurar padrão" Style="{StaticResource Secondary}" Click="BtnCfgReset_Click" HorizontalAlignment="Left" Padding="12,5" Margin="0,4,0,0"/>
+        </StackPanel>
+      </Border>
+    </Popup>
+    <ScrollViewer x:Name="MainScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel x:Name="PageDiag" Margin="26,14,26,28" MaxWidth="1500">
+          <ProgressBar x:Name="PbFull" Height="6" Maximum="100" Margin="4,0" Foreground="#7CB4FF" Background="#1C272B" BorderThickness="0"/>
+          <TextBlock x:Name="TxtFullStatus" Foreground="#BBD6FF" FontWeight="SemiBold" Margin="6,6,0,4" TextWrapping="Wrap" Text="Pronto. Clique em “Verificar minha internet” (leva cerca de 1 a 2 minutos)."/>
+
+
+          <!-- Resultado: título + ícones por etapa; detalhes ao passar o mouse -->
+          <Border x:Name="HeadBorder" Style="{StaticResource Card}" BorderThickness="1">
+            <StackPanel>
+              <DockPanel>
+                <Border x:Name="HeadDetail" DockPanel.Dock="Right" Width="30" Height="30" CornerRadius="15" Background="#25324A" BorderBrush="#7CB4FF" BorderThickness="1" VerticalAlignment="Top" Visibility="Collapsed" Cursor="Help" ToolTipService.ShowDuration="60000" ToolTipService.InitialShowDelay="100">
+                  <TextBlock Text="i" FontWeight="Bold" FontSize="15" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  <Border.ToolTip>
+                    <ToolTip MaxWidth="560">
+                      <StackPanel>
+                        <TextBlock Text="Como resolver" FontWeight="Bold"/>
+                        <TextBlock x:Name="TxtHeadSteps" TextWrapping="Wrap" Margin="0,2,0,8"/>
+                        <TextBlock Text="Evidências" FontWeight="Bold"/>
+                        <TextBlock x:Name="TxtHeadWhy" TextWrapping="Wrap" Margin="0,2,0,8"/>
+                        <TextBlock x:Name="TxtHistory" TextWrapping="Wrap" FontStyle="Italic"/>
+                      </StackPanel>
+                    </ToolTip>
+                  </Border.ToolTip>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock x:Name="TxtHeadIcon" Visibility="Collapsed"/>
+                  <TextBlock x:Name="TxtHeadLabel" Text="Diagnóstico" FontSize="12" FontWeight="Bold" Foreground="{StaticResource T3}"/>
+                  <TextBlock x:Name="TxtHeadTitle" FontSize="21" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{StaticResource T1}" Text="Aguardando a verificação"/>
+                  <TextBlock x:Name="TxtHeadWho" Foreground="#FDE68A" FontWeight="Bold" Margin="0,2,0,0"/>
+                  <TextBlock x:Name="TxtHeadSummary" Style="{StaticResource Help}" FontSize="14" Text="Clique em “Verificar minha internet”."/>
+                  <StackPanel Orientation="Horizontal"><ProgressBar x:Name="PbHeadConf" Width="160" Height="6" Maximum="100" Foreground="#7CB4FF" Background="#1C272B" BorderThickness="0" Visibility="Collapsed"/><TextBlock x:Name="TxtHeadConf" Margin="10,0,0,0" Foreground="#BBD6FF" FontSize="12.5"/></StackPanel>
+                </StackPanel>
+              </DockPanel>
+              <TextBlock x:Name="TxtStagesTitle" Text="Etapas (passe o mouse para ver detalhes)" FontSize="11.5" Foreground="{StaticResource T3}" Margin="0,14,0,6" Visibility="Collapsed"/>
+              <ItemsControl x:Name="ItemsStages">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Width="92" Margin="0,0,10,4" Background="Transparent" Cursor="Help" ToolTipService.ShowDuration="30000" ToolTipService.InitialShowDelay="100">
+                      <StackPanel.ToolTip>
+                        <ToolTip MaxWidth="340"><StackPanel>
+                          <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                          <TextBlock Text="{Binding StateText}" FontWeight="SemiBold"/>
+                          <TextBlock Text="{Binding Detail}" TextWrapping="Wrap"/>
+                        </StackPanel></ToolTip>
+                      </StackPanel.ToolTip>
+                      <Grid Width="48" Height="48" HorizontalAlignment="Center">
+                        <Ellipse Fill="{Binding Fill}" Stroke="{Binding Edge}" StrokeThickness="2.5"/>
+                        <TextBlock Text="{Binding Icon}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                      </Grid>
+                      <TextBlock Text="{Binding Name}" FontSize="12" Foreground="#E2E8F0" TextAlignment="Center" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+
+          <!-- Rotas ao vivo dos destinos -->
+          <StackPanel x:Name="RoutesSection" Visibility="Collapsed">
+            <DockPanel Margin="0,18,0,6">
+              <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Bottom">
+                <TextBlock Text="● problema" Foreground="#F87171" FontSize="12" Margin="0,0,12,0"/><TextBlock Text="● atenção" Foreground="#FBBF24" FontSize="12" Margin="0,0,12,0"/>
+                <TextBlock Text="● normal" Foreground="#8A9DA2" FontSize="12" Margin="0,0,12,0"/><TextBlock Text="○ não responde ao teste (comum)" Foreground="#8A9DA2" FontSize="12"/>
+              </WrapPanel>
+              <StackPanel>
+                <TextBlock Text="Rotas ao vivo" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource T1}"/>
+                <TextBlock x:Name="TxtRoutesSummary" FontSize="12.5" FontWeight="SemiBold" Margin="0,1,0,1"/>
+                <TextBlock Text="Cinza = caminho normal; cor só onde há problema, com ▼ no salto onde ele começa. Sob o trilho, a operadora de cada trecho. Passe o mouse num ponto para detalhes; clique numa linha para ver o gráfico." FontSize="12" Foreground="{StaticResource T3}" TextWrapping="Wrap"/>
+              </StackPanel>
+            </DockPanel>
+            <Border Style="{StaticResource Card}" Padding="8" Margin="0">
+              <Grid x:Name="RoutesHost" SizeChanged="RoutesHost_SizeChanged"><Canvas x:Name="RoutesCanvas" Height="10" HorizontalAlignment="Left"/></Grid>
+            </Border>
+          </StackPanel>
+
+          <!-- Monitor ao vivo (compacto) -->
+          <StackPanel x:Name="MonSection" Visibility="Collapsed">
+            <TextBlock Style="{StaticResource H2}" Text="Latência ao longo do tempo"/>
+            <Border Style="{StaticResource Card}" Margin="0,4,0,6">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,8">
+                  <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button x:Name="BtnMonPause" Content="Pausar" Style="{StaticResource Secondary}" Click="BtnMonPause_Click" IsEnabled="False" Padding="14,5" Margin="0,0,6,0"/>
+                    <Button x:Name="BtnMonStop" Content="Parar" Style="{StaticResource Danger}" Click="BtnMonStop_Click" IsEnabled="False" Padding="14,5" Margin="0"/>
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal">
+                    <Border x:Name="MonChip" CornerRadius="4" Padding="12,5" Background="{StaticResource BgCard2}" VerticalAlignment="Center"><TextBlock x:Name="TxtMonChip" Text="● Aguardando" FontWeight="SemiBold" Foreground="{StaticResource T2}"/></Border>
+                    <TextBlock Text="Alvo" VerticalAlignment="Center" Margin="16,0,6,0" Foreground="{StaticResource T3}"/>
+                    <ComboBox x:Name="CmbLive" Width="230" Margin="0" SelectionChanged="CmbLive_Changed"/>
+                  </StackPanel>
+                </DockPanel>
+                <DockPanel>
+                  <TextBlock x:Name="TxtChartHover" DockPanel.Dock="Right" Foreground="#FDE68A" FontSize="12" FontWeight="SemiBold" Margin="10,0,0,0"/>
+                  <TextBlock x:Name="TxtChartInfo" Foreground="{StaticResource T2}" FontSize="12.5" TextTrimming="CharacterEllipsis"/>
+                </DockPanel>
+                <Canvas x:Name="ChartLive" Height="200" Background="Transparent" ClipToBounds="True" Margin="0,6,0,0" MouseMove="ChartLive_MouseMove" MouseLeave="ChartLive_MouseLeave" SizeChanged="ChartLive_SizeChanged"/>
+                <DockPanel Margin="0,10,0,0">
+                  <TextBlock x:Name="TxtMonStatus" DockPanel.Dock="Right" Foreground="#A7F3D0" FontSize="12" Text=""/>
+                  <TextBlock x:Name="TxtAvailTitle" Text="Disponibilidade nos últimos 15 min" FontSize="11.5" FontWeight="SemiBold" Foreground="{StaticResource T3}" TextTrimming="CharacterEllipsis" Margin="0,0,16,0"/>
+                </DockPanel>
+                <Canvas x:Name="AvailCanvas" Height="18" Margin="0,5,0,0" ClipToBounds="True"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+
+
+          <Expander x:Name="TxtHypsTitle" Header="Outras causas possíveis" Foreground="{StaticResource T2}" Margin="0,10,0,0" Visibility="Collapsed"><ItemsControl x:Name="ItemsHyps">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><UniformGrid Columns="{Binding HypCols, RelativeSource={RelativeSource AncestorType=Window}}"/></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Margin="0,6,10,6" Padding="16" CornerRadius="4" Background="{Binding Tint}" BorderBrush="{Binding Color}" BorderThickness="1">
+                  <StackPanel>
+                    <DockPanel>
+                      <TextBlock DockPanel.Dock="Right" Text="{Binding ConfText}" Foreground="{Binding Color}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                      <TextBlock Text="{Binding Icon}" FontSize="20" Margin="0,0,8,0"/>
+                      <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" Foreground="White" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <TextBlock Text="{Binding WhoText}" FontWeight="Bold" Foreground="#FDE68A" Margin="0,5,0,0"/>
+                    <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" Margin="0,5,0,8" Foreground="#E2E8F0"/>
+                    <TextBlock Text="Como resolver" FontWeight="Bold" FontSize="11.5" Foreground="#86EFAC"/>
+                    <TextBlock Text="{Binding StepsText}" TextWrapping="Wrap" Margin="0,3,0,0" Foreground="#F1F5F9"/>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl></Expander>
+        
+          <!-- Detalhes técnicos: tudo recolhido -->
+          <Expander x:Name="ExpDet" Header="Detalhes técnicos" Foreground="{StaticResource T2}" FontWeight="SemiBold" Margin="0,14,0,0" Visibility="Collapsed">
+            <StackPanel Margin="14,6,0,0" TextElement.FontWeight="Normal">
+              <Expander x:Name="ExpConn" Header="Conexão, provedor e IP público" Foreground="{StaticResource T2}" Margin="0,4,0,0">
+                <StackPanel Margin="14,4,0,0">
+                  
+                <TextBlock Text="Internet e provedor" Style="{StaticResource Sect}" Foreground="#8A9DA2"/>
+                <ItemsControl x:Name="ItemsInfoNet" ItemTemplate="{StaticResource InfoTile}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding InfoCols, RelativeSource={RelativeSource AncestorType=Window}}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+                <Expander Header="Evidências de NAT / CGNAT" Foreground="{StaticResource T2}" Margin="0,4,0,0"><TextBlock x:Name="TxtNatDetail" Style="{StaticResource Help}" TextWrapping="Wrap" Margin="14,4,0,0"/></Expander>
+                <Expander Header="Seu IP público: roteamento, provedores, registro e whois" Foreground="{StaticResource T2}" Margin="0,6,0,0">
+                  <StackPanel Margin="14,6,0,0">
+                    <DockPanel Margin="0,0,0,4">
+                      <Button x:Name="BtnLookup" DockPanel.Dock="Right" Content="Consultar" Click="BtnLookup_Click" Style="{StaticResource Secondary}" Padding="14,5" Margin="8,0,0,0"/>
+                      <TextBlock DockPanel.Dock="Left" Text="IP" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource T3}"/>
+                      <TextBox x:Name="TxtLookupIp" MaxLength="45" KeyDown="TxtLookupIp_KeyDown" TextChanged="TxtLookupIp_Changed" ToolTip="Preenchido com o seu IP público; digite outro IP público para consultar"/>
+                    </DockPanel>
+                    <TextBlock x:Name="TxtLookupStatus" Style="{StaticResource Help}" Text="Consulta automática ao fim da verificação. Fontes públicas: RDAP, RIPEstat, Team Cymru."/>
+                    <StackPanel x:Name="PnlLookup" Visibility="Collapsed">
+                      <ItemsControl x:Name="ItemsLkRouting" ItemTemplate="{StaticResource InfoTile}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding InfoCols, RelativeSource={RelativeSource AncestorType=Window}}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+                      <TextBlock Text="Provedores a montante (principais)" Style="{StaticResource Sect}" Foreground="#8A9DA2"/>
+                      <ItemsControl x:Name="ItemsLkUp" ItemTemplate="{StaticResource InfoTile}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding InfoCols, RelativeSource={RelativeSource AncestorType=Window}}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+                      <TextBlock Text="Registro do bloco (RDAP)" Style="{StaticResource Sect}" Foreground="#8A9DA2"/>
+                      <ItemsControl x:Name="ItemsLkReg" ItemTemplate="{StaticResource InfoTile}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding InfoCols, RelativeSource={RelativeSource AncestorType=Window}}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+                      <Expander x:Name="ExpLkPref" Header="Prefixos anunciados" Foreground="{StaticResource T3}" Margin="0,8,0,0"><TextBox x:Name="TxtLkPrefixes" IsReadOnly="True" TextWrapping="Wrap" FontFamily="Consolas" MaxHeight="150" VerticalScrollBarVisibility="Auto" Margin="14,4,0,0"/></Expander>
+                      <Expander Header="Clientes a jusante" Foreground="{StaticResource T3}" Margin="0,4,0,0"><ItemsControl x:Name="ItemsLkDown" ItemTemplate="{StaticResource InfoTile}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding InfoCols, RelativeSource={RelativeSource AncestorType=Window}}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl></Expander>
+                      <Expander Header="Whois (texto original dos registros)" Foreground="{StaticResource T3}" Margin="0,4,0,0"><TextBox x:Name="TxtLkWhois" IsReadOnly="True" TextWrapping="NoWrap" FontFamily="Consolas" MaxHeight="260" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="14,4,0,0"/></Expander>
+                      <Expander Header="Fontes e limitações" Foreground="{StaticResource T3}" Margin="0,4,0,0"><TextBlock x:Name="TxtLkNotes" Style="{StaticResource Help}" TextWrapping="Wrap" Margin="14,4,0,0"/></Expander>
+                    </StackPanel>
+                  </StackPanel>
+                </Expander>
+                <TextBlock Text="Sua rede local" Style="{StaticResource Sect}" Foreground="#8A9DA2"/>
+                <ItemsControl x:Name="ItemsInfoLocal" ItemTemplate="{StaticResource InfoTile}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding InfoCols, RelativeSource={RelativeSource AncestorType=Window}}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+                </StackPanel>
+              </Expander>
+              <Expander Header="Destinos testados" Foreground="{StaticResource T2}" Margin="0,6,0,0"><DataGrid x:Name="GridDests" MaxHeight="360" Margin="0,6,0,0">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Destino" Binding="{Binding Title}" Width="170"/>
+                <DataGridTextColumn Header="Endereço IP" Binding="{Binding Address}" Width="130"/>
+                <DataGridTextColumn Header="Enviados" Binding="{Binding Sent}" Width="80"/>
+                <DataGridTextColumn Header="Perda" Binding="{Binding LossTxt}" Width="70"/>
+                <DataGridTextColumn Header="Mais rápido" Binding="{Binding MinTxt}" Width="95"/>
+                <DataGridTextColumn Header="Média" Binding="{Binding AvgTxt}" Width="90"/>
+                <DataGridTextColumn Header="Mais lento" Binding="{Binding MaxTxt}" Width="95"/>
+                <DataGridTextColumn Header="Oscilação" Binding="{Binding JitTxt}" Width="90"/>
+                <DataGridTextColumn Header="Situação" Binding="{Binding Status}" Width="170" ElementStyle="{StaticResource StatusCell}"/>
+                <DataGridTextColumn Header="Operadora" Binding="{Binding Org}" Width="170"/>
+                <DataGridTextColumn Header="ASN" Binding="{Binding Asn}" Width="90"/>
+                <DataGridTextColumn Header="Conexão / site" Binding="{Binding Extra}" Width="*" ElementStyle="{StaticResource Wrap}"/>
+              </DataGrid.Columns>
+            </DataGrid></Expander>
+              <Expander Header="DNS" Foreground="{StaticResource T2}" Margin="0,6,0,0"><DataGrid x:Name="GridDns" MaxHeight="360" Margin="0,6,0,0">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Servidor" Binding="{Binding Server}" Width="190"/>
+                <DataGridTextColumn Header="Empresa" Binding="{Binding Provider}" Width="150"/>
+                <DataGridTextColumn Header="Acertos" Binding="{Binding Success}" Width="80"/>
+                <DataGridTextColumn Header="Média" Binding="{Binding AvgTxt}" Width="90"/>
+                <DataGridTextColumn Header="Situação" Binding="{Binding Status}" Width="130" ElementStyle="{StaticResource StatusCell}"/>
+                <DataGridTextColumn Header="Resposta" Binding="{Binding Answers}" Width="*" ElementStyle="{StaticResource Wrap}"/>
+              </DataGrid.Columns>
+            </DataGrid></Expander>
+              <Expander Header="Sites (HTTPS)" Foreground="{StaticResource T2}" Margin="0,6,0,0"><DataGrid x:Name="GridHttp" MaxHeight="360" Margin="0,6,0,0">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Site" Binding="{Binding Url}" Width="*"/>
+                <DataGridTextColumn Header="Situação" Binding="{Binding Status}" Width="170" ElementStyle="{StaticResource StatusCell}"/>
+                <DataGridTextColumn Header="Código" Binding="{Binding Code}" Width="70"/>
+                <DataGridTextColumn Header="DNS (ms)" Binding="{Binding DnsMs}" Width="85"/>
+                <DataGridTextColumn Header="1ª resposta (ms)" Binding="{Binding TtfbMs}" Width="125"/>
+                <DataGridTextColumn Header="Total (ms)" Binding="{Binding TotalMs}" Width="95"/>
+                <DataGridTextColumn Header="Certificado até" Binding="{Binding Cert}" Width="130"/>
+              </DataGrid.Columns>
+            </DataGrid></Expander>
+              <Expander Header="Eventos do monitor" Foreground="{StaticResource T2}" Margin="0,6,0,0"><DataGrid x:Name="GridEvents" MaxHeight="360" Margin="0,6,0,0">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Hora" Binding="{Binding Time}" Width="90"/>
+                <DataGridTextColumn Header="Alvo" Binding="{Binding Target}" Width="200"/>
+                <DataGridTextColumn Header="Evento" Binding="{Binding Kind}" Width="190"/>
+                <DataGridTextColumn Header="Detalhe" Binding="{Binding Detail}" Width="*" ElementStyle="{StaticResource Wrap}"/>
+              </DataGrid.Columns>
+            </DataGrid></Expander>
+            </StackPanel>
+          </Expander>
+        </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</Window>
